@@ -8,6 +8,8 @@ import (
 	"os"
 
 	"encoding/json"
+
+	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/heroku"
@@ -17,34 +19,41 @@ var (
 	store = sessions.NewCookieStore([]byte(os.Getenv("COOKIE_SECRET")), []byte(os.Getenv("COOKIE_ENCRYPT")))
 
 	oauthConfig = &oauth2.Config{
-		ClientID:     os.Getenv("HEROKU_OAUTH_ID"),
-		ClientSecret: os.Getenv("HEROKU_OAUTH_SECRET"),
+		ClientID:     os.Getenv("QSp8DZNKE0M6jvoNBaW1oX79k1NiwvXM"),
+		ClientSecret: os.Getenv("SECRET"),
 		Endpoint:     heroku.Endpoint,
-		Scopes:       []string{"identity"},
-		RedirectURL:  "http://" + os.Getenv("HEROKU_APP_NAME") + "herouapp.com/auth/heorku/callback",
+		Scopes:       []string{oidc.ScopeOpenID, "user"},
+		RedirectURL:  "http://" + os.Getenv("app-supplyme.") + "herouapp.com/auth/heroku/callback",
 	}
-	stateToken = os.Getenv("HEROKU_APP_NAME")
+	stateToken = os.Getenv("app-supplyme")
 )
 
-func init() {
+type Authenticator struct {
+	Provider *oidc.Provider
+	Config   oauthConfig
+	ctx      context.Context
+}
+
+func init() error {
 	gob.Register(&oauth2.Token{})
 
 	store.MaxAge(60 * 60 * 8)
 	store.Options.Secure = true
+
+	return nil
 }
 
-func handleRoot(w http.ResponseWriter, r *http.Request) {
+var handleRoot = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `<html><body><a href="/auth/heroku">Sign in with Heroku</a></body></html>`)
-}
-
-func handleAuth(w http.ResponseWriter, r *http.Request) {
+})
+var handleAuth = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	url := oauthConfig.AuthCodeURL(stateToken)
 	http.Redirect(w, r, url, http.StatusFound)
-}
+})
 
-func handleAuthCallback(w http.ResponseWriter, r *http.Request) {
+var handleAuthCallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if v := r.FormValue("state"); v != stateToken {
-		http.Error(w, "Instalid State token", http.StatusBadRequest)
+		http.Error(w, "Invalid State token", http.StatusBadRequest)
 		return
 	}
 
@@ -54,7 +63,7 @@ func handleAuthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	session, err := store.Get(r, "heroku-outh-example-go")
+	session, err := store.Get(r, "spring-bush-3329.us.auth0.com")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -64,10 +73,10 @@ func handleAuthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	http.Redirect(w, r, "/user", http.StatusFound)
-}
+})
 
-func handleUser(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "heroku-oauth-example-go")
+var handleUser = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "spring-bush-3329.us.auth0.com")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -96,14 +105,4 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprint(w, `<html><body><h1>Hello %s</h1></body></html>`, User.Email)
-
-}
-
-func main() {
-	http.HandleFunc("/", handleRoot)
-	http.HandleFunc("/auth/heroku", handleAuth)
-	http.HandleFunc("/auth/heroku/callback", handleAuthCallback)
-	http.HandleFunc("/user", handleUser)
-
-	http.ListenAndServe(":"+os.Getenv("8080"), nil)
-}
+})

@@ -1,14 +1,10 @@
 /*
+Package Entity contains all of the Business Logic for our Database, and how the operations that allow manipulation
+User.go Contains all of the types required for user authentication
+*/
+package entity
 
- */
-package main
-
-import (
-	"database/sql"
-	"fmt"
-)
-
-//The basics of what is collected by the user.
+//User type contains the information needed for authentication, and logging in
 type User struct {
 	ID        string
 	Email     string
@@ -17,14 +13,10 @@ type User struct {
 	PublicKey string
 }
 
-//Our understanding of what is kept between organizations, and the structures of the required details.
+//Profile type allows the extension of Organizations, and Cryptographic Keys for Organizational Wallets
 type Profile struct {
 	Org  string
 	PKey string
-}
-
-type User_Cert struct {
-	DB *sql.DB
 }
 
 func create_profile() (*Profile, error) {
@@ -35,11 +27,11 @@ func create_profile() (*Profile, error) {
 	return p, nil
 }
 
-//Our Method for making a new user in our Entity Database. Will take inputs of User information in the form of a JSON file, which we unmarshal and provide
+//Creating a user is done by inputting a JSON object, and decoding it into strings before inputting creating a User type in the Database
 func create_user() (*User, error) {
 	k := &User{
 		ID:        "Test",
-		Email:     "Darryl.huet1@ucalgary.ca",
+		Email:     "Example@ucalgary.ca",
 		Password:  "Hash",
 		Username:  "Donk",
 		PublicKey: "12345",
@@ -47,38 +39,28 @@ func create_user() (*User, error) {
 	return k, nil
 }
 
-func (u User_Cert) user_base() ([]User, error) {
-	rows, err := u.DB.Query("SELECT * FROM users")
+//Creates a schema of the Users for querying password hashes
+func (c Cargo) user_base() ([]User, error) {
+	rows, err := c.DB.Query("SELECT * FROM users")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var user []User
+	var users []User
 
 	for rows.Next() {
-		var user User
+		var usr User
 
-		err := rows.Scan{&user.ID, &user.Email, &user.Password, &user.Username, &user.PublicKey}
+		err := rows.Scan(&usr.ID, &usr.Email, &usr.Password, &usr.Username, &usr.PublicKey)
 		if err != nil {
 			return nil, err
 		}
 
-		user = append(users, user)
+		users = append(users, usr)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return user, nil
-
-}
-
-func main() {
-	a, err := create_user()
-	b, err2 := create_profile()
-	if err != nil || err2 != nil {
-		panic("idk man")
-	}
-	fmt.Printf("%+v\n", *a)
-	fmt.Printf("%+v\n", *b)
+	return users, nil
 }
