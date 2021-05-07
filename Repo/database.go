@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	entity "github.com/darrylhuet/supplyme/entity"
 	_ "github.com/lib/pq"
-	entity "supplyme/entity"
 )
 
 //Env struct provides our interfaces for these assets and their structures in their models.
@@ -67,7 +67,8 @@ func (env *Env) user_match(w http.ResponseWriter, r *http.Request) {
 
 //Contribute Session back to repo
 
-func init_db(db_url string) (*Cargo, *Env, error) {
+func init_db() (*Env, error) {
+	var db_url = "postgres://ykkmopruszfdqc:420218a172c4d42409e4611676d1f4fdf068d48ea910d09137174b644ebbeb59@ec2-52-21-153-207.compute-1.amazonaws.com:5432/d1idf7u1b1ckru"
 	entity.db, err = sql.Open("postgres", os.Getenv(db_url))
 	if err != nil {
 		log.Fatal(err)
@@ -79,24 +80,5 @@ func init_db(db_url string) (*Cargo, *Env, error) {
 		users: entity.Cargo{DB: db},
 	}
 
-	return entity.db, env, nil
-}
-
-var db_url = "postgres://ykkmopruszfdqc:420218a172c4d42409e4611676d1f4fdf068d48ea910d09137174b644ebbeb59@ec2-52-21-153-207.compute-1.amazonaws.com:5432/d1idf7u1b1ckru"
-
-func main() {
-	db, err := sql.Open("postgres", os.Getenv(db_url))
-	if err != nil {
-		log.Fatal(err)
-	}
-	env := &Env{
-		asset: entity.Cargo{DB: db},
-		items: entity.Cargo{DB: db},
-		users: entity.Cargo{DB: db},
-	}
-
-	http.HandleFunc("/assets", env.asset_index)
-	http.HandleFunc("/user/{slug}/asset/item", env.item_index)
-	http.ListenAndServe(":3000", nil)
-	http.HandleFunc("/login", env.user_match)
+	return env, nil
 }
