@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func decode_json(file_name string, filter func(map[string]interface{}) bool) []map[string]interface{} {
+func readJSON(file_name string, filter func(map[string]interface{}) bool) []map[string]interface{} {
 	file, _ := os.Open(file_name)
 	defer file.Close()
 

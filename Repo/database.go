@@ -67,6 +67,21 @@ func (env *Env) user_match(w http.ResponseWriter, r *http.Request) {
 
 //Contribute Session back to repo
 
+func init_db(db_url string) (*Cargo, *Env, error) {
+	entity.db, err = sql.Open("postgres", os.Getenv(db_url))
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	env := &Env{
+		asset: entity.Cargo{DB: db},
+		items: entity.Cargo{DB: db},
+		users: entity.Cargo{DB: db},
+	}
+
+	return entity.db, env, nil
+}
+
 var db_url = "postgres://ykkmopruszfdqc:420218a172c4d42409e4611676d1f4fdf068d48ea910d09137174b644ebbeb59@ec2-52-21-153-207.compute-1.amazonaws.com:5432/d1idf7u1b1ckru"
 
 func main() {

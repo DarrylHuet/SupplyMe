@@ -10,6 +10,7 @@ import (
 	"os"
 )
 
+
 type Page struct {
 	ID          int
 	Name        string
@@ -42,6 +43,10 @@ func main() {
 		AllowedMethods: []string{"GET", "POST"},
 		AllowedHeaders: []string{"Content-Type", "Origin", "Accept", "*"},
 	})
+	http.HandleFunc("/assets", env.asset_index)
+	http.HandleFunc("/user/{slug}/asset/item", env.item_index)
+	http.ListenAndServe(":3000", nil)
+	http.HandleFunc("/login", env.user_match)
 
 	http.ListenAndServe(":"+os.Getenv("8080"), corsWrapper.Handler(r))
 }
@@ -55,8 +60,9 @@ var StatusHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 })
 
 var PageHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	env := 
 	//Our payload is the information that is handled throughout the application, and they don't have access to decode them
-	payload, err := json.Marshal(pages)
+	payload, err := env.asset_index
 	if err != nil {
 		log.Println(err)
 	}
